@@ -1,0 +1,106 @@
+---
+title: "Assignment 1"
+author: "Maia Cossette"
+date: "2025-09-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Part 1
+#1 Creating a species vector and randomly sample it 100 times
+```{r}
+
+set.seed(1)
+species<- c("cat", "dog", "whale", "dolphin", "shark")
+sample(species, size = 100, replace = TRUE)
+```
+
+#2 Creating a width vector and using a log distribution to avoid negatives or zeros
+```{r}
+set.seed(1)
+Limb_width<- c(1:100)
+rlnorm(100, meanlog = 0, sdlog =1)
+
+```
+
+#3 Created a length vector and used a normal distribution 
+```{r}
+set.seed(1)
+Limb_length<- rnorm(100, mean = 50, sd = 10)
+Limb_length
+```
+
+#4 Created a names vector with 100 sample
+```{r}
+set.seed(1)
+Observer<- c("Maia", "Peter", "Jade")
+Observers<- sample(Observer, size = 100, replace = TRUE)
+Observers
+
+```
+
+#5 Created a data frame with all the vectors and turned it into csv file
+```{r}
+measurements<-data.frame(species, Limb_width, Limb_length, Observers)
+write.csv(measurements,file= "measurements", row.names = F)
+head(measurements)
+```
+
+#Part 2
+```{r}
+#upload library 
+library(dplyr)
+
+#upload data from r script 1
+Data1<- read.csv("measurements.csv")
+Data1
+
+#add volume column 
+Data1<- Data1 %>%
+  mutate(Volume= Limb_width*Limb_length)
+Data1
+
+#overwrite new data
+write.csv(Data1, "meansurements.csv", row.names = F)
+```
+
+#sort data by species, observer and volume
+```{r}
+
+Data1<-Data1 %>%
+  arrange(species, Observers, Volume)
+head(Data1)
+```
+
+#average volume for each species 
+```{r}
+average<-Data1 %>%
+  group_by(species)
+average
+```
+
+#table for number of observations
+```{r}
+nobservations<- Data1 %>%
+  group_by(species, Observers)
+nobservations
+```
+
+#boxplot 
+```{r}
+library(ggplot2)
+ggplot(data = Data1, aes(x= species, y= Volume)) +geom_boxplot() +labs(title = "Distribution of Limb Volume by Species", x= "Species", y= "Limb Volume")
+
+```
+#multipanel plot
+
+```{r}
+ggplot(data = Data1, aes(x= Volume)) +geom_histogram() +labs(title = "Distribution of Limb Volume per Species", x= "Volume", y= "Frequency") +facet_wrap(~species)
+
+#facet_wrap for seperate histogram plots 
+
+```
+

@@ -1,0 +1,28 @@
+---
+title: "volumeEstimato.R"
+author: "Maia Cossette"
+date: "2025-09-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#upload library 
+library(dplyr)
+
+#upload data from r script 1
+Data1<- read.csv("measurements.csv")
+Data1
+
+#add volume column 
+Data1<- Data1 %>%
+  mutate(Volume= Limb_width*Limb_length)
+Data1
+
+#overwrite new data
+write.csv(Data1, "meansurements.csv", row.names = F)
+```
+

@@ -1,0 +1,40 @@
+---
+title: "Regex Assignment"
+author: "Maia Cossette"
+date: "2025-10-02"
+output: html_document
+---
+GitHub Respository: https://github.com/maiacossette/BIOL432-assignment-1 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+MData<- read.csv("measurements.csv")
+head(MData)
+```
+```{r}
+MData<- MData %>%
+  mutate(Sp= sub("^([A-Za-z])[a-z]+", "\\1.", species))
+
+head(MData)
+
+```
+#3. Reorder columns
+```{r}
+MData<- MData %>%
+  select(Sp, everything(), -species)
+head(MData)
+```
+#4.
+```{r}
+
+write.csv(MData, "MeasShort.csv", row.names = FALSE)
+
+system("git add Regex.Rmd Regex.html MeasShort.csv")
+system("git commit -m 'Added Regex assignment and shortened dataset'")
+system("git push")
+
+```
+
