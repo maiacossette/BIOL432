@@ -1,0 +1,137 @@
+```{r setup}
+install.packages("tree")
+install.packages("randomForest")
+library(tree)
+library(dplyr)
+library(randomForest)
+```
+
+```{r Part1}
+DataRaw <- read.csv("Cohen_CANCERSEEK_liquid_biopsy_2018_modified.csv",
+                   header = TRUE, 
+                   stringsAsFactors = FALSE, 
+                   check.names = FALSE)
+ColID <- c("Patient_ID", "Sample_ID")
+ColLabel <- "Tumor_type"
+Proteins <- colnames(DataRaw)[4:42]
+DataRaw[[ColLabel]] <- as.factor(DataRaw[[ColLabel]])
+DataRaw[ , 4:42] <- data.frame(lapply(DataRaw[ , 4:42], as.numeric))
+
+head(colSums(is.na(DataRaw[Proteins])), 10)
+med_AFP <- median(DataRaw$AFP, na.rm = TRUE)
+DataRaw$AFP[is.na(DataRaw$AFP)] <- med_AFP
+med_Angiopoietin_2 <- median(DataRaw$Angiopoietin_2, na.rm = TRUE)
+DataRaw$Angiopoietin_2[is.na(DataRaw$Angiopoietin_2)] <- med_Angiopoietin_2
+med_AXL <- median(DataRaw$AXL, na.rm = TRUE)
+DataRaw$AXL[is.na(DataRaw$AXL)] <- med_AXL
+med_CA_125 <- median(DataRaw$CA_125, na.rm = TRUE)
+DataRaw$CA_125[is.na(DataRaw$CA_125)] <- med_CA_125
+med_CA_15_3 <- median(DataRaw$CA_15_3, na.rm = TRUE)
+DataRaw$CA_15_3[is.na(DataRaw$CA_15_3)] <- med_CA_15_3
+med_CA19_9 <- median(DataRaw$CA19_9, na.rm = TRUE)
+DataRaw$CA19_9[is.na(DataRaw$CA19_9)] <- med_CA19_9
+med_CD44 <- median(DataRaw$CD44, na.rm = TRUE)
+DataRaw$CD44[is.na(DataRaw$CD44)] <- med_CD44
+head(colSums(is.na(DataRaw[Proteins])), 10)
+
+nrow(DataRaw)
+ncol(DataRaw)
+cat("\nRow Number：", nrow(DataRaw), "\nColume Number：", ncol(DataRaw), "\n")
+table(DataRaw$Tumor_type)
+Normal <- sum(DataRaw$Tumor_type == "Normal" | DataRaw$Tumor_type == "normal")
+Tumor <- nrow(DataRaw) - Normal
+cat("\nNormal Sample：", Normal, "\nTumor Sample：", Tumor, "\n")
+
+TrainLabel <- seq(1, nrow(DataRaw), by = 2)
+TestLabel <- seq(2, nrow(DataRaw), by = 2)
+Train <- DataRaw[TrainLabel, ]
+Test <- DataRaw[TestLabel, ]
+cat("\nTrain size：", nrow(Train), "；Test size：", nrow(Test), "\n")
+```
+
+```{r Part2}
+ModelColumn <- c("Tumor_type", Proteins)
+TrainModel <- Train[, ModelColumn]
+TestModel  <- Test[,  ModelColumn]
+str(TrainModel)
+str(TestModel)
+
+tree.model <- tree(Tumor_type ~ ., data = TrainModel)
+plot(tree.model)
+text(tree.model, cex=0.7, adj=0)
+summary(tree.model)
+
+tree.pred <- predict(tree.model, TestModel, type = "class")
+ConfMat <- table(Predicted = tree.pred, Actual = TestModel$Tumor_type)
+ConfMat
+MisclassRate <- mean(tree.pred != TestModel$Tumor_type)
+cat("\nDecision tree misclassification rate: ", MisclassRate, "\n")
+```
+#misclassification rate is 0.3702882
+#The cancer tree accurately predicted Normal, Colorectum, and Pancreas; but had difficulty predicting Esophagus, Liver, Stomach, Breast, and Lung.
+
+```{r Part3}
+set.seed(111)
+RF.model <- randomForest(Tumor_type ~ .,
+                         data = TrainModel,
+                         ntree = 500,
+                         mtry = 6,
+                         importance = TRUE)
+RF.model
+
+RF.predicted <- predict(RF.model, TestModel, type = "class")
+RF.ConfusionMatrix <- table(Predicted = RF.predicted, Actual = TestModel$Tumor_type)
+RF.ConfusionMatrix
+
+RFMisclassRate <- mean(RF.predicted != TestModel$Tumor_type)
+cat("\nRandom Forest Misclassification Rate：", RFMisclassRate, "\n")
+
+Importance <- importance(RF.model)
+ImDataframe <- data.frame(Feature = rownames(Importance),
+                          MeanDecreaseAccuracy = Importance[, "MeanDecreaseAccuracy"])
+ImDataframe <- ImDataframe[order(ImDataframe$MeanDecreaseAccuracy), ]
+barplot(ImDataframe$MeanDecreaseAccuracy,
+        names.arg = ImDataframe$Feature,
+        main = "Random Forest Feature Importance",
+        xlab = "MeanDecreaseAccuracy",
+        cex.names = 0.8)
+ImDataframe
+```
+#The most important proteins were IL-8 (29.39) and IL-6 (25.33). IL-8 is an inflammatory factor commonly found in the tumor microenvironment, while IL-6 is a typical pro-inflammatory cytokine involved in cellular immune responses.
+
+```{r Binary classification}
+DataRaw$binary <- ifelse(DataRaw$Tumor_type == "Normal", "Normal", "Cancer")
+DataRaw$binary <- as.factor(DataRaw$binary)
+
+Train$binary <- ifelse(Train$Tumor_type == "Normal", "Normal", "Cancer")
+Train$binary <- as.factor(Train$binary)
+Test$binary  <- ifelse(Test$Tumor_type == "Normal", "Normal", "Cancer")
+Test$binary  <- as.factor(Test$binary)
+
+TrainBinary <- Train[, c("binary", Proteins)]
+TestBinary  <- Test[,  c("binary", Proteins)]
+
+RF.binary <- randomForest(binary ~ ., 
+                          data = TrainBinary, 
+                          ntree = 500, 
+                          mtry = 6, 
+                          importance = TRUE)
+RF.binary
+
+RF.binary.predicted <- predict(RF.binary, TestBinary, type = "class")
+ConfusionMatrix.binary <- table(Predicted = RF.binary.predicted, Actual = TestBinary$binary)
+ConfusionMatrix.binary
+
+MisclassBinary <- mean(RF.binary.predicted != TestBinary$binary)
+cat("\nBinary misclassification rate:", MisclassBinary, "\n")
+
+Accuracy <- sum(diag(ConfusionMatrix.binary)) / sum(ConfusionMatrix.binary)
+cat("Accuracy:", Accuracy, "\n")
+
+Total <- sum(ConfusionMatrix.binary)
+pe <- sum(rowSums(ConfusionMatrix.binary) * colSums(ConfusionMatrix.binary)) / (Total^2)
+Kappa <- (Accuracy - pe) / (1 - pe)
+cat("Kappa:", Kappa, "\n")
+```
+#The Random Forest binary classification model performed well on the dataset (Accuracy = 95%, Kappa = 0.90), indicating that the model is useful for detecting cancer in blood samples using this set of proteins.
+
