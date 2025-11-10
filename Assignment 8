@@ -1,0 +1,92 @@
+
+```{r setup, include=FALSE}
+getwd()
+setwd("C:/Users/zyd11/Dropbox/PC/Desktop/Biol432")
+install.packages("ape")
+install.packages("reshape2")
+install.packages("ggtree")
+install.packages("viridis")
+library(ape)
+library(ggplot2)
+library(reshape2)
+library(ggtree)
+library(viridis)
+```
+
+```{r distance matrix and tree, include=FALSE}
+DragonNexus <- read.nexus.data("./Data/DragonMatrix.nex")
+names(DragonNexus)[1:5]
+DragonNexus[[1]][1:10]
+
+DragonNexusFrame <- data.frame(matrix(unlist(DragonNexus), 
+                                   ncol = 78, 
+                                   byrow = TRUE))
+row.names(DragonNexusFrame) <- names(DragonNexus)
+head(DragonNexusFrame[1:10])
+
+DragonDist <- dist(DragonNexusFrame, method = "binary")
+DragonDistMatrix <- as.matrix(DragonDist)
+dim(DragonDistMatrix)
+sum(is.na(DragonDistMatrix))
+```
+
+```{r plot, include=FALSE}
+PDat <- melt(DragonDistMatrix)
+names(PDat) <- c("Query", "Subject", "Distance")
+ggplot(PDat, aes(x = Query, y = Subject, fill = Distance)) +
+  geom_tile() +
+  scale_fill_viridis(option = "magma") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        axis.text.y = element_text(size = 6))
+
+DragonTree <- nj(DragonDist)
+ggtree(DragonTree, layout = "circular")
+```
+
+```{r dragon coloring, include=FALSE}
+Traits <- data.frame(Name = DragonTree$tip.label, group = NA)
+Traits$group[grep("German",  Traits$Name, ignore.case = TRUE)]  <- "Western"
+Traits$group[grep("French",  Traits$Name, ignore.case = TRUE)]  <- "Western"
+Traits$group[grep("Dutch",   Traits$Name, ignore.case = TRUE)]  <- "Western"
+Traits$group[grep("English", Traits$Name, ignore.case = TRUE)]  <- "Western"
+Traits$group[grep("American",Traits$Name, ignore.case = TRUE)]  <- "Western"
+Traits$group[grep("British", Traits$Name, ignore.case = TRUE)]  <- "Western"
+Traits$group[grep("Spanish", Traits$Name, ignore.case = TRUE)]  <- "Western"
+Traits$group[grep("Italian", Traits$Name, ignore.case = TRUE)]  <- "Western"
+Traits$group[grep("Japanese", Traits$Name, ignore.case = TRUE)] <- "Orientalia"
+Traits$group[grep("China",    Traits$Name, ignore.case = TRUE)] <- "Orientalia"
+Traits$group[grep("India",    Traits$Name, ignore.case = TRUE)] <- "Orientalia"
+Traits$group[grep("Iran",     Traits$Name, ignore.case = TRUE)] <- "Orientalia"
+Traits$group[grep("Greece", Traits$Name, ignore.case = TRUE)] <- "Ancient"
+Traits$group[grep("Turkey", Traits$Name, ignore.case = TRUE)] <- "Ancient"
+Traits$group[grep("Snake",  Traits$Name, ignore.case = TRUE)] <- "Serpentidae"
+Traits$group[grep("Fish",   Traits$Name, ignore.case = TRUE)] <- "Aquatic"
+Traits$group[grep("Mammal", Traits$Name, ignore.case = TRUE)] <- "Beast"
+Traits$group[is.na(Traits$group)] <- "Other"
+Traits$group <- as.factor(Traits$group)
+table(Traits$group)
+head(Traits)
+
+suppressWarnings({
+  ggtree(DragonTree, layout = "circular") %<+% Traits +
+    geom_tiplab(aes(color = group), size = 2.2, show.legend = TRUE) +
+    scale_color_manual(values = c(
+      "Western"     = "red",
+      "Orientalia"  = "blue",
+      "Ancient"     = "lightblue",
+      "Serpentidae" = "green",
+      "Aquatic"     = "black",
+      "Beast"       = "purple",  
+      "Slavic"      = "orange", 
+      "Other"       = "gray"
+    )) +
+    ggtitle("Dragon Phylogeny Colored by Lineage") +
+    theme_tree2() +
+    theme(
+      legend.position = "right",
+      legend.text = element_text(size = 8),
+      legend.title = element_blank(),
+      plot.title = element_text(hjust = 0.5, face = "bold")
+    )
+})
+```
