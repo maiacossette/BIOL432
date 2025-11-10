@@ -1,1 +1,131 @@
+title: "assignment 2"
+author: "Maia Cossette"
+date: "2025-09-09"
+output: html_document
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+Data=read.csv("BirdBehaviour.csv")
+Data
+
+head(Data)
+```
+
+#2?
+```{r}
+Data1<- Data %>%
+  mutate_all(scale())
+
+
+Data %>%
+  select_if(function(x) any(is.na(x))) %>%
+  names()
+
+```
+#3
+```{r}
+Data1<- Data %>%
+  pivot_longer (cols = c(Groom, Forage, Mate, Sleep), names_to = "Behaviour", values_to = "Score")
+#make data long format 
+
+head(Data1)
+
+ggplot(data = Data1, aes(x= Species, y=Score, fill = Species)) +geom_boxplot() +labs(x="Bird Species", y= "Behaviours") + facet_wrap(~Behaviour)
+#create boxplot
+
+```
+Figure A.
+
+Figure A shows the 4 behavioural measurements (Groom, Forage, Mate and Sleep) across different bird species.
+
+
+#4
+```{r}
+
+Behaviours<- Data %>%
+  select(Groom, Forage, Mate, Sleep)
+head(Behaviours)
+
+cor(Behaviours, use =  "pairwise.complete.obs")
+
+```
+#5
+The boxplots shows clear differences in behavioural patterns across bird species. Forage seems to be more consistent and compared to grooming and mating, which shows stronger differences per species. The correlation matrix supports this because grooming and mating are positively correlated. On the other hand, grooming is negatively correlated with both foraging and sleep. These results imply that time spent on grooming or mating may have reduced time for resting or foraging. 
+
+Part II
+#1 - Scaling
+I chose z-score standardization as the scaling method, which rescales each variable to have a mean of 0 and standard deviation of 1. I chose this method so they each behavioural trait contributes equaly to the PCA. 
+```{r}
+scaleData<-scale(Behaviours, center = TRUE, scale = TRUE)
+scaleData
+
+```
+#2 - PCA on behavioural data
+#3 - COR(FALSE)
+I excluded species and ID columns because the PCA only works with numerical variables. I only used the four behavioural traits Groom, Forage, Mate and Sleep because they are numerical data.
+
+We use cor(TRUE) when all variables are on different scales but groom, forage, mate and sleep are all counts of behaviours, therefore we used cor(FALSE) so the PCA uses covariance matrix. 
+
+```{r}
+PCAA<-princomp(x=Behaviours, cor = FALSE)
+```
+
+#4 The object created was 
+```{r}
+
+class(PCAA)
+names(PCAA)
+str(PCAA)
+```
+#5 The seven slices are sdev, loadings, center, scale, n.obs, scores, call
+sdev: standard deviations of each component 
+loadings: the eigenvectors
+center: the means of variables that are used for centering
+scale: the scaling applied to the variables 
+n.obs: the number of observations used in the pca
+scores: the principal component vectors 
+call: original function call
+
+The loadings are the eigenvectors and the scores are the principal component vectors
+
+Part III
+
+#1 - Combine PC vectors and original data
+```{r}
+NewData<-cbind(Behaviours, PCAA$scores)
+```
+
+#2 - Create bivariate plot
+```{r}
+Plot1<-ggplot(NewData, aes(x= Comp.1, y= Comp.2)) +geom_point() + labs(title = "PCA1 vs PCA 2", x= "PCA1", y= "PCA2")
+
+Plot2<-ggplot(NewData, aes(x= Comp.3, y= Comp.4)) +geom_point() + labs(title = "PCA3 vs PCA4", x= "PCA3", y= "PCA4")
+
+Plot1
+Plot2
+
+
+```
+#3
+```{r}
+PCAA$loadings
+```
+
+#5
+PC1 vs PC2 plot provides clearest separation among the six species. Sturnus vulgaris forms a distinct cluster at the lower end of PC2, showing it invests time in behaviours that differ strongly from other species. Passer domesticus and Erithacus rebecula overlap but cluster higher on PC2, while Cardeuelis carduelis and Parus major spread more along PC1, reflecting variation in the trade-offs between grooming activities. Turdus merula separates slightly on PC2 as well. 
+
+
+# 6. Which biplot is "best" and why
+
+the PC1 vs PC2 plot is the best choice. These 2 components explain greatest proportion of total variance and clearly separate species into distinct behavioural clusters while PC3 vs PC4 explain less variance and shows weaker separation. 
+
+
 
