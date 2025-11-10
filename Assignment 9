@@ -1,1 +1,41 @@
+```{r setup, echo=TRUE, message=FALSE}
+library(vegan)
+floristic <- read.csv("FloristicSurvey.csv")
+head(floristic)
+str(floristic)
+
+meta <- floristic[, 1:10]
+species <- floristic[, 11:ncol(floristic)]
+species_scaled <- species
+for (i in 1:ncol(species_scaled)) {
+  species_scaled[, i] <- species_scaled[, i] / max(species_scaled[, i])
+}
+
+dist_matrix <- vegdist(species_scaled, method = "bray")
+nmds <- metaMDS(dist_matrix, k = 2)
+nmds
+
+plot(nmds, display = "sites", type = "n", main = "NMDS of Plant Communities")
+points(nmds, display = "sites",
+       col = ifelse(meta$Location == "i", "red", "blue"), pch = 19)
+legend("topright", legend = c("Inside", "Outside"),
+       col = c("red", "blue"), pch = 19)
+
+site_scores <- scores(nmds, display = "sites")
+meta$NMDS1 <- site_scores[, 1]
+meta$NMDS2 <- site_scores[, 2]
+anova_both <- aov(NMDS1 ~ Location + Population, data = meta)
+summary(anova_both)
+
+meta$Richness <- rowSums(species > 0)
+boxplot(Richness ~ Location, data = meta,
+        main = "Species Richness by Garlic Mustard Presence",
+        col = c("blue", "red"),
+        names = c("Outside", "Inside"),
+        ylab = "Number of Species")
+```
+##The NMDS plots show that the distribution of points inside and outside the garlic mustard plots is mixed and there is no clear boundary, indicating that the plant community composition of the two types of plots is generally similar. Meanwhile, the species richness box plot also shows that the median values for Inside and Outside are similar, with no significant difference. The presence of garlic mustard had no significant impact on the composition and species diversity of the local plant community.
+##The F value for Population was 49.59, p = 1.43e−07, which was highly significant; while the F value for Location was 0.35, p = 0.562, which was not significant. This indicates that there are greater differences in the plant communities between different sampling sites, and population has a stronger impact on community composition than the presence of garlic mustard. The main changes in plant communities are due to differences in population, rather than the presence of garlic mustard.
+##For question 1, an NMDS plot and a species richness box plot were used because combining these two plots allows for simultaneous observation of NMDS and diversity changes (Richness). For question 2, a two-way ANOVA table was used because it can quantitatively compare the effects of Location and Population on community structure and provide statistically significant results.
+
 
