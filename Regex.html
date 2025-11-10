@@ -1,0 +1,163 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><head></head><body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div>
+
+
+
+<h1 class="title toc-ignore">Regex Assignment</h1>
+<h4 class="author">Maia Cossette</h4>
+<h4 class="date">2025-10-02</h4>
+
+</div>
+
+
+<p>GitHub Respository: <a rel="noopener" href="https://github.com/maiacossette/BIOL432-assignment-1" class="uri">https://github.com/maiacossette/BIOL432-assignment-1</a></p>
+<pre class="r"><code>library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>MData&lt;- read.csv(&quot;measurements.csv&quot;)
+head(MData)</code></pre>
+<pre><code>##   species Limb_width Limb_length Observers
+## 1     cat          1    43.73546      Maia
+## 2     dog          2    51.83643      Jade
+## 3   whale          3    41.64371      Maia
+## 4 dolphin          4    65.95281     Peter
+## 5   shark          5    53.29508      Maia
+## 6     cat          6    41.79532      Jade</code></pre>
+<pre class="r"><code>MData&lt;- MData %&gt;%
+  mutate(Sp= sub(&quot;^([A-Za-z])[a-z]+&quot;, &quot;\\1.&quot;, species))
+
+head(MData)</code></pre>
+<pre><code>##   species Limb_width Limb_length Observers Sp
+## 1     cat          1    43.73546      Maia c.
+## 2     dog          2    51.83643      Jade d.
+## 3   whale          3    41.64371      Maia w.
+## 4 dolphin          4    65.95281     Peter d.
+## 5   shark          5    53.29508      Maia s.
+## 6     cat          6    41.79532      Jade c.</code></pre>
+<p>#3. Reorder columns</p>
+<pre class="r"><code>MData&lt;- MData %&gt;%
+  select(Sp, everything(), -species)
+head(MData)</code></pre>
+<pre><code>##   Sp Limb_width Limb_length Observers
+## 1 c.          1    43.73546      Maia
+## 2 d.          2    51.83643      Jade
+## 3 w.          3    41.64371      Maia
+## 4 d.          4    65.95281     Peter
+## 5 s.          5    53.29508      Maia
+## 6 c.          6    41.79532      Jade</code></pre>
+<p>#4.</p>
+<pre class="r"><code>write.csv(MData, &quot;MeasShort.csv&quot;, row.names = FALSE)</code></pre>
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="module" src="https://s.brightspace.com/lib/bsi/2025.10.239/unbundled/mathjax.js"></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() {
+						if (document.querySelector('math, .d2l-element, .d2l-cplus-layout') || /\$\$|\\\(|\\\[|\\begin{|\\ref{|\\eqref{/.test(document.body.innerHTML)) {
+							document.querySelectorAll('mspace[linebreak="newline"]').forEach(elm => {
+								elm.setAttribute('style', 'display: block; height: 0.5rem;');
+							});
+
+							document.querySelectorAll('math mmultiscripts > none').forEach(elm => {
+								const mrow = document.createElementNS('http://www.w3.org/1998/Math/MathML', 'mrow');
+								elm.replaceWith(mrow);
+							});
+
+							window.D2L.MathJax.loadMathJax({
+								outputScale: 1.5,
+								renderLatex: false,
+								enableMML3Support: false
+							});
+						}
+					});</script><script type="module" src="https://s.brightspace.com/lib/bsi/2025.10.239/unbundled/prism.js"></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() {
+					document.querySelectorAll('.d2l-code').forEach(code => {
+						window.D2L.Prism.formatCodeElement(code);
+					});
+				});</script><script type="module" src="https://s.brightspace.com/lib/bsi/2025.10.239/unbundled/embeds.js"></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() {
+					window.D2L.EmbedRenderer.renderEmbeds(document.body);
+				});</script></body></html>
