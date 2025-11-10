@@ -1,1 +1,150 @@
+---
+title: "Assignment3"
+output: html_document
+date: "2025-09-16"
 
+Bradley Barham (20358779)
+Kaden Kowalyshyn (20356617)
+Maia Cossette (20334031)
+Salma Kinawi (20336070)
+Emmeline Close (20324093)
+Justin Lasrado (20283881)
+---
+
+```{r setup}
+#load libraries
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(MASS)
+source("http://bit.ly/theme_pub")
+theme_set(theme_pub())
+
+### Part I: Data Exploration & QA/QC
+
+#import the data
+Data <- "https://colauttilab.github.io/Data/ColauttiBarrett2013Data.csv"
+DataRaw <- read.csv(Data, stringsAsFactors = FALSE)
+dim(DataRaw) 
+names(DataRaw)
+str(DataRaw)
+summary(DataRaw)
+```
+
+```{r change factor}
+
+DataRaw$Site   <- as.factor(DataRaw$Site)
+DataRaw$Pop    <- as.factor(DataRaw$Pop)
+DataRaw$Region <- as.factor(DataRaw$Region)
+
+DataRaw$Ind <- as.factor(DataRaw$Ind)
+DataRaw$Row <- as.factor(DataRaw$Row)
+DataRaw$Pos <- as.factor(DataRaw$Pos)
+DataRaw$Mat <- as.factor(DataRaw$Mat)
+```
+
+```{r report NA}
+colnames(DataRaw)
+FeatureSelected <- c(
+  "Flwr07","FVeg07","InfMass07","Fruits07",
+  "Flwr08","FVeg08","HVeg08","InfMass08",
+  "Flwr09","FVeg09","HVeg09","InfMass09",
+  "Flwr10","FVeg10","HVeg10","InfMass10"
+)
+Subset <- DataRaw[ , FeatureSelected]
+NANumbers <- colSums(is.na(Subset)) 
+NANumbers
+```
+
+```{r replace NA and check}
+Subset <- Subset %>%
+  mutate(Flwr07    = ifelse(is.na(Flwr07), mean(Flwr07, na.rm=TRUE), Flwr07),
+         FVeg07    = ifelse(is.na(FVeg07),    mean(FVeg07, na.rm=TRUE), FVeg07),
+         InfMass07 = ifelse(is.na(InfMass07), mean(InfMass07, na.rm=TRUE), InfMass07),
+         Fruits07  = ifelse(is.na(Fruits07),  mean(Fruits07, na.rm=TRUE), Fruits07),
+         Flwr08    = ifelse(is.na(Flwr08),    mean(Flwr08, na.rm=TRUE), Flwr08),
+         FVeg08    = ifelse(is.na(FVeg08),    mean(FVeg08, na.rm=TRUE), FVeg08),
+         HVeg08    = ifelse(is.na(HVeg08),    mean(HVeg08, na.rm=TRUE), HVeg08),
+         InfMass08 = ifelse(is.na(InfMass08), mean(InfMass08, na.rm=TRUE), InfMass08),
+         Flwr09    = ifelse(is.na(Flwr09),    mean(Flwr09, na.rm=TRUE), Flwr09),
+         FVeg09    = ifelse(is.na(FVeg09),    mean(FVeg09, na.rm=TRUE), FVeg09),
+         HVeg09    = ifelse(is.na(HVeg09),    mean(HVeg09, na.rm=TRUE), HVeg09),
+         InfMass09 = ifelse(is.na(InfMass09), mean(InfMass09, na.rm=TRUE), InfMass09),
+         Flwr10    = ifelse(is.na(Flwr10),    mean(Flwr10, na.rm=TRUE), Flwr10),
+         FVeg10    = ifelse(is.na(FVeg10),    mean(FVeg10, na.rm=TRUE), FVeg10),
+         HVeg10    = ifelse(is.na(HVeg10),    mean(HVeg10, na.rm=TRUE), HVeg10),
+         InfMass10 = ifelse(is.na(InfMass10), mean(InfMass10, na.rm=TRUE), InfMass10))
+
+NANumbers <- colSums(is.na(Subset)) 
+NANumbers
+```
+
+```{r plot}
+par(mfrow = c(2,2))
+hist(Subset$Flwr07, main="Histogram of Flwr07", xlab="Flwr07")
+hist(Subset$FVeg07, main="Histogram of FVeg07", xlab="FVeg07")
+hist(Subset$InfMass07, main="Histogram of InfMass07", xlab="InfMass07")
+hist(Subset$Fruits07, main="Histogram of Fruits07", xlab="Fruits07")
+```
+
+```{r scale}
+Scaled <- scale(Subset, center = T, scale = T)
+Scaled <- as.data.frame(Scaled)
+apply(Scaled, 2, mean)
+apply(Scaled, 2, sd)
+```
+
+##Writing a linear model for selection is unnecessary because the features in this dataset are all biological variables (research objects) with clear meaning in the experiment. LDA itself will automatically weight the features using the LD axes to highlight the variables that distinguish the categories.
+
+```{r prepare X and Y}
+X <- as.data.frame(Scaled)
+ySite   <- DataRaw$Site
+yPop    <- DataRaw$Pop 
+yRegion <- DataRaw$Region
+dim(X) 
+table(ySite)
+table(yPop)
+table(yRegion)
+```
+
+### Part II: LDA
+
+```{r LDA model}
+LADSite <- lda(ySite ~ ., data = cbind(X, ySite))
+LADSite
+
+LADPop <- lda(yPop ~ ., data = cbind(X, yPop))
+LADPop
+```
+
+##As for the number of axes in site, since we need to distinguish three sites, LD1 = 0.6603, explaining 66% of the discrimination power; LD2 = 0.3397, explaining 33.9% of the discrimination power, which add up to 1, so these two LD axes (LD1, LD2) can distinguish the three sites.
+##As for the number of axes in six populations, theoretically, there are five LD axes for the population, LD1=0.7659, LD2=0.1384, LD3=0.0687 LD4= 0.0163 LD5=0.0107, of which LD1 (76.5%) and LD2 (13.8%) can explain the vast majority. However, the other three axes still have certain explanatory power.
+
+```{r LDA scores}
+LADSite$scaling
+LADPop$scaling
+
+PredictSite <- predict(LADSite)
+head(PredictSite$x)
+PredictPop <- predict(LADPop)
+head(PredictPop$x)
+```
+
+```{r LDA plot}
+plot(PredictSite$x[,1], PredictSite$x[,2],
+     col = as.numeric(as.factor(ySite)), pch = 16,
+     xlab = "LD1", ylab = "LD2",
+     main = "LDA of Sites")
+legend("bottomleft",
+       legend = c("1_BEF", "2_KSR", "3_Timmins"),
+       col = c(1, 2, 3),
+       pch = 16)
+```
+
+##LDA analysis of the Lythrum salicaria dataset reveals clearer separation between populations than PCA. For site, two LD axes were sufficient to distinguish the three sites. LD1 (66%) explained primarily reproductive traits such as flowering and fruiting, while LD2 (34%) emphasized vegetative growth. This suggests that different growth environments promote distinct life strategies, with some sites favoring reproductive strategies while others favor vegetative growth.
+
+##For populations, there were five LD axes, of which LD1 (77%) and LD2 (14%) together explained over 90% of the discriminative power. LD1 was primarily influenced by early flowering and vegetative growth traits (Flwr08, Fveg07, and Fveg08) in 2007–2008, while LD2 was more prominent in inflorescence biomass in 2008–2010. However, the remaining LD axes (3–5) also had some discriminative power. For example, LD3 explained 6.9% of the variance, likely representing minor differences between populations in specific years or traits.This suggests that differences between populations primarily manifest in trade-offs between early and late growth and reproduction, potentially influenced by genetic factors. Compared with PCA, PC1 only distinguished populations by chance, and PC2 distinguished sites, while LDA maximized these differences, proving that these traits can be clearly distinguished. LDA more strongly illustrates that differences at the site level are mainly affected by the impact of the environment on reproduction and nutrient allocation, while differences at the population level reflect flowering time and biomass allocation.
+
+##LDA is a method that finds combinations of predictors to best separate groups in a categorical response. RDA is a technique that finds axes of variation in the response that are explained by the predictors, which is useful when predictors are highly correlated. Using RDA first can improve predictions by reducing noise and focusing on the important variation, and its axes can then be used as inputs for LDA. In R, you fit an RDA with rda(), get the sample scores, and then run LDA with lda() using those scores as predictors.
+
+## When evaluating the accuracy of a model when 90% of observations come from a single Lythrum population, standard accuracy metrics can be quite misleading. The model may predict the majority class and still appear highly accurate. To assess performance more reliably, alternative options like a confusion matrix could help visualize misclassifications across populations. Additionally, cross-validation ensures consistent class representation during training and testing. Additionally, evaluating performance within each population and considering ecological or biological relevance is key for a meaningful interpretation of the data. 
